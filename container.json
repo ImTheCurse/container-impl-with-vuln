@@ -1,0 +1,5 @@
+{
+  "buildCommands": ["ls", "hostname"],
+  "copy": ["*"],
+  "workingDirectory": "/"
+}
