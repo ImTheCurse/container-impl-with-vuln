@@ -31,3 +31,9 @@ type Container struct {
 	// Error of the command, remove it?
 	err error
 }
+
+type ContainerResourcesLimit struct {
+	MaxMemory uint
+	MaxPid    uint
+	MaxCpu    float64
+}

