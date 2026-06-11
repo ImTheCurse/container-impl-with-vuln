@@ -89,9 +89,11 @@ func (cont *Container) BuildContainer(bp *ContainerBlueprint) error {
 	)
 
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Cloneflags: syscall.CLONE_NEWUTS,
+		Cloneflags: syscall.CLONE_NEWUTS |
+			syscall.CLONE_NEWPID |
+			syscall.CLONE_NEWNS,
+		Unshareflags: syscall.CLONE_NEWNS,
 	}
-
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("%w: %v", CmdRunFailedError, err)
 	}
@@ -99,6 +101,7 @@ func (cont *Container) BuildContainer(bp *ContainerBlueprint) error {
 }
 
 func RunContainerChild() error {
+	fmt.Printf("Running child process id: %v\n", os.Getpid())
 	script := os.Getenv(childScriptEnv)
 	if script == "" {
 		return fmt.Errorf("%w: %s", MissingChildConfigError, childScriptEnv)
@@ -127,6 +130,13 @@ func RunContainerChild() error {
 	if err := os.Chdir("/"); err != nil {
 		return fmt.Errorf("%w: %v", DirChangeError, err)
 	}
+	if err := os.MkdirAll("/proc", 0555); err != nil {
+		return fmt.Errorf("%w: %v", ProcMountError, err)
+	}
+	if err := syscall.Mount("proc", "/proc", "proc", 0, ""); err != nil {
+		return fmt.Errorf("%w: %v", ProcMountError, err)
+	}
+	defer syscall.Unmount("/proc", 0)
 	if err := os.Chdir(workDir); err != nil {
 		return fmt.Errorf("%w: %v", DirChangeError, err)
 	}

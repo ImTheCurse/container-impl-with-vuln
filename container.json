@@ -1,5 +1,5 @@
 {
-  "buildCommands": ["ls", "hostname"],
+  "buildCommands": ["ls", "hostname", "ps", "touch ROOT_FS_FILE"],
   "copy": ["*"],
   "workingDirectory": "/"
 }

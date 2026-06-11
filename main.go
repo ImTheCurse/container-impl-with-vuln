@@ -7,8 +7,9 @@ import (
 )
 
 func main() {
-	blueprint := flag.String("blueprint", "", "Path of the blueprint instructions to build the container.")
+	blueprint := flag.String("blueprint", "", "Path of the blueprint instructions to build the container")
 	containerChild := flag.Bool("container-child", false, "internal container child mode")
+
 	flag.Parse()
 
 	if *containerChild {
