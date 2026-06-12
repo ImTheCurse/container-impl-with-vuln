@@ -13,8 +13,8 @@ Minimal container runner in Go using linux system containerization and isolation
 Create the `rootfs` directory if it does not exist, then extract the Ubuntu filesystem tarball:
 
 ```bash
-mkdir -p rootfs
-tar -xf ubuntu-fs.tar -C rootfs
+sudo mkdir -p rootfs
+sudo tar -xpf ubuntu-fs.tar -C rootfs
 ```
 
 ## 🏗️ 2) Build the binary
