@@ -1,4 +1,4 @@
-package container
+package runtime
 
 import (
 	"fmt"
@@ -38,33 +38,33 @@ func RunContainerChild() error {
 }
 
 func loadChildRuntimeConfig() (*childRuntimeConfig, error) {
-	script := os.Getenv(childScriptEnv)
+	script := os.Getenv(ChildScriptEnv)
 	if script == "" {
-		return nil, fmt.Errorf("%w: %s", MissingChildConfigError, childScriptEnv)
+		return nil, fmt.Errorf("%w: %s", MissingChildConfigError, ChildScriptEnv)
 	}
 
-	workDir := os.Getenv(childWorkDirEnv)
+	workDir := os.Getenv(ChildWorkDirEnv)
 	if workDir == "" {
-		return nil, fmt.Errorf("%w: %s", MissingChildConfigError, childWorkDirEnv)
+		return nil, fmt.Errorf("%w: %s", MissingChildConfigError, ChildWorkDirEnv)
 	}
 
-	startPipeFDValue := os.Getenv(childStartPipeFDEnv)
+	startPipeFDValue := os.Getenv(ChildStartPipeFDEnv)
 	if startPipeFDValue == "" {
-		return nil, fmt.Errorf("%w: %s", MissingChildConfigError, childStartPipeFDEnv)
+		return nil, fmt.Errorf("%w: %s", MissingChildConfigError, ChildStartPipeFDEnv)
 	}
 	startPipeFD, err := strconv.Atoi(startPipeFDValue)
 	if err != nil || startPipeFD < 0 {
-		return nil, fmt.Errorf("%w: %s=%q", MissingChildConfigError, childStartPipeFDEnv, startPipeFDValue)
+		return nil, fmt.Errorf("%w: %s=%q", MissingChildConfigError, ChildStartPipeFDEnv, startPipeFDValue)
 	}
 
-	hostname := os.Getenv(childHostnameEnv)
+	hostname := os.Getenv(ChildHostnameEnv)
 	if hostname == "" {
-		hostname = defaultContainerHostname
+		hostname = DefaultContainerHostname
 	}
 
-	rootfsPath := os.Getenv(childRootfsPathEnv)
+	rootfsPath := os.Getenv(ChildRootfsPathEnv)
 	if rootfsPath == "" {
-		return nil, fmt.Errorf("%w: %s", MissingChildConfigError, childRootfsPathEnv)
+		return nil, fmt.Errorf("%w: %s", MissingChildConfigError, ChildRootfsPathEnv)
 	}
 
 	return &childRuntimeConfig{
@@ -79,7 +79,7 @@ func loadChildRuntimeConfig() (*childRuntimeConfig, error) {
 func waitForParentStartSignal(startPipeFD int) error {
 	startPipe := os.NewFile(uintptr(startPipeFD), "container-start-pipe")
 	if startPipe == nil {
-		return fmt.Errorf("%w: %s", MissingChildConfigError, childStartPipeFDEnv)
+		return fmt.Errorf("%w: %s", MissingChildConfigError, ChildStartPipeFDEnv)
 	}
 	defer startPipe.Close()
 

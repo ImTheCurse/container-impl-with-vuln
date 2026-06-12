@@ -6,8 +6,9 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"strconv"
 	"syscall"
+
+	"github.com/ImTheCurse/container-impl-with-vuln/runtime"
 )
 
 func (cont *Container) BuildContainer(bp *ContainerBlueprint, limits *ContainerResourcesLimit) (retErr error) {
@@ -31,7 +32,13 @@ func (cont *Container) BuildContainer(bp *ContainerBlueprint, limits *ContainerR
 	}
 	defer startWrite.Close()
 
-	cmd := cont.newChildCommand(bp, rootfsPath, startRead)
+	cmd := runtime.NewChildCommand(runtime.ChildCommandConfig{
+		Script:     runtime.BuildContainerScript(*bp.BuildCommands),
+		WorkDir:    *bp.WrkDir,
+		Hostname:   runtime.DefaultContainerHostname,
+		RootfsPath: rootfsPath,
+		StartRead:  startRead,
+	})
 	if err := cmd.Start(); err != nil {
 		_ = startRead.Close()
 		return fmt.Errorf("%w: %v", CmdRunFailedError, err)
@@ -54,32 +61,6 @@ func (cont *Container) BuildContainer(bp *ContainerBlueprint, limits *ContainerR
 	}
 
 	return waitForCommandWithSignals(cmd)
-}
-
-func (cont *Container) newChildCommand(bp *ContainerBlueprint, rootfsPath string, startRead *os.File) *exec.Cmd {
-	script := buildContainerScript(*bp.BuildCommands)
-	cmd := exec.Command("/proc/self/exe", childModeFlag)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	startPipeFD := 3 + len(cmd.ExtraFiles)
-	cmd.ExtraFiles = append(cmd.ExtraFiles, startRead)
-	cmd.Env = append(os.Environ(),
-		childScriptEnv+"="+script,
-		childWorkDirEnv+"="+*bp.WrkDir,
-		childHostnameEnv+"="+defaultContainerHostname,
-		childRootfsPathEnv+"="+rootfsPath,
-		childStartPipeFDEnv+"="+strconv.Itoa(startPipeFD),
-	)
-
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Cloneflags: syscall.CLONE_NEWUTS |
-			syscall.CLONE_NEWPID |
-			syscall.CLONE_NEWNS,
-		Unshareflags: syscall.CLONE_NEWNS,
-	}
-	return cmd
 }
 
 func attachResourceLimits(cmd *exec.Cmd, limits *ContainerResourcesLimit) (func() error, error) {

@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"github.com/ImTheCurse/container-impl-with-vuln/container"
+	containerruntime "github.com/ImTheCurse/container-impl-with-vuln/runtime"
 )
 
 func main() {
@@ -17,7 +18,7 @@ func main() {
 	flag.Parse()
 
 	if *containerChild {
-		if err := container.RunContainerChild(); err != nil {
+		if err := containerruntime.RunContainerChild(); err != nil {
 			panic(err)
 		}
 		return
