@@ -100,6 +100,9 @@ func setupChildRuntime(cfg *childRuntimeConfig) (func(), error) {
 	if err := os.Chdir("/"); err != nil {
 		return nil, fmt.Errorf("%w: %v", DirChangeError, err)
 	}
+	if err := configureStaticDNS(); err != nil {
+		return nil, err
+	}
 	if err := os.MkdirAll("/proc", 0555); err != nil {
 		return nil, fmt.Errorf("%w: %v", ProcMountError, err)
 	}
@@ -115,6 +118,23 @@ func setupChildRuntime(cfg *childRuntimeConfig) (func(), error) {
 	return func() {
 		_ = syscall.Unmount("/proc", 0)
 	}, nil
+}
+
+func configureStaticDNS() error {
+	if info, err := os.Lstat("/etc/resolv.conf"); err == nil {
+		// checks if /etc/resolv.conf is a symbolic link
+		if info.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("%w: /etc/resolv.conf is a symlink : %v", DNSConfigError, err)
+		}
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("%w: failed checking /etc/resolv.conf: %v", DNSConfigError, err)
+	}
+
+	const resolvConf = "nameserver 1.1.1.1\nnameserver 8.8.8.8\n"
+	if err := os.WriteFile("/etc/resolv.conf", []byte(resolvConf), 0o644); err != nil {
+		return fmt.Errorf("%w: failed writing /etc/resolv.conf: %v", DNSConfigError, err)
+	}
+	return nil
 }
 
 func runPayloadScript(script string) error {
