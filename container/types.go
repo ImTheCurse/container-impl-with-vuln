@@ -37,3 +37,8 @@ type ContainerResourcesLimit struct {
 	MaxPid    uint
 	MaxCpu    float64
 }
+
+type ContainerFileMapping struct {
+	src    string
+	target string
+}

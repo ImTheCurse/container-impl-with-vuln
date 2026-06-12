@@ -15,6 +15,11 @@ func (cont *Container) BuildContainer(bp *ContainerBlueprint, limits *ContainerR
 		return InvalidBlueprintError
 	}
 
+	err := bp.CopyFiles()
+	if err != nil {
+		return err
+	}
+
 	rootfsPath, err := filepath.Abs("rootfs")
 	if err != nil {
 		return fmt.Errorf("%w: %v", RootChangeFailedError, err)
