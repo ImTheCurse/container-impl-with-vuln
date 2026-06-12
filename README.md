@@ -31,10 +31,11 @@ Example:
 
 ```json
 {
-  "buildCommands": ["hostname", "pwd", "ls -la"],
-  "copy": ["*"],
-  "workingDirectory": "/tmp"
+  "buildCommands": ["ls", "apt update", "touch ROOT_FS_FILE", "hostname", "ps"],
+  "copy": ["container/. container/."],
+  "workingDirectory": "/home/ubuntu/"
 }
+
 ```
 
 ## 🚀 4) Run
