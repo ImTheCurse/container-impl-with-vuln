@@ -58,12 +58,6 @@ func (bp *ContainerBlueprint) CopyFiles() error {
 			return err
 		}
 
-		fin, err := os.Open(mapping.src)
-		if err != nil {
-			return err
-		}
-		defer fin.Close()
-
 		targetInImage := mapping.target
 		if !filepath.IsAbs(targetInImage) {
 			targetInImage = filepath.Join(*bp.WrkDir, targetInImage)
@@ -75,31 +69,102 @@ func (bp *ContainerBlueprint) CopyFiles() error {
 		}
 
 		targetPath := filepath.Join("rootfs", strings.TrimPrefix(targetInImage, string(os.PathSeparator)))
-		targetDir := filepath.Dir(targetPath)
-		if err := os.MkdirAll(targetDir, 0o755); err != nil {
-			return TargetDirectoryCreateError
-		}
-		if info, err := os.Stat(targetPath); err == nil {
-			if info.IsDir() {
-				if err := os.RemoveAll(targetPath); err != nil {
-					return TargetPathCleanupError
-				}
-			}
-		} else if !os.IsNotExist(err) {
+		srcInfo, err := os.Stat(mapping.src)
+		if err != nil {
 			return err
 		}
 
-		fout, err := os.OpenFile(targetPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
-		if err != nil {
-			return err
+		if srcInfo.IsDir() {
+			if err := copyDirectory(mapping.src, targetPath); err != nil {
+				return err
+			}
+			continue
 		}
-		defer fout.Close()
-		_, err = io.Copy(fout, fin)
-		if err != nil {
+
+		if err := copySingleFile(mapping.src, targetPath); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func copySingleFile(srcPath, targetPath string) error {
+	targetDir := filepath.Dir(targetPath)
+	if err := os.MkdirAll(targetDir, 0o755); err != nil {
+		return TargetDirectoryCreateError
+	}
+
+	if info, err := os.Stat(targetPath); err == nil {
+		if info.IsDir() {
+			if err := os.RemoveAll(targetPath); err != nil {
+				return TargetPathCleanupError
+			}
+		}
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+
+	fin, err := os.Open(srcPath)
+	if err != nil {
+		return err
+	}
+	defer fin.Close()
+
+	fout, err := os.OpenFile(targetPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
+	if err != nil {
+		return err
+	}
+	defer fout.Close()
+
+	if _, err := io.Copy(fout, fin); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func copyDirectory(srcDir, targetDir string) error {
+	if info, err := os.Stat(targetDir); err == nil {
+		if !info.IsDir() {
+			if err := os.RemoveAll(targetDir); err != nil {
+				return TargetPathCleanupError
+			}
+		}
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+
+	if err := os.MkdirAll(targetDir, 0o755); err != nil {
+		return TargetDirectoryCreateError
+	}
+
+	return filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		relPath, err := filepath.Rel(srcDir, path)
+		if err != nil {
+			return err
+		}
+		if relPath == "." {
+			return nil
+		}
+
+		destinationPath := filepath.Join(targetDir, relPath)
+		if info.IsDir() {
+			if err := os.MkdirAll(destinationPath, 0o755); err != nil {
+				return TargetDirectoryCreateError
+			}
+			return nil
+		}
+
+		if info.Mode().IsRegular() {
+			return copySingleFile(path, destinationPath)
+		}
+
+		return nil
+	})
 }
 
 func parseSrcTargetFile(filePair string) (ContainerFileMapping, error) {

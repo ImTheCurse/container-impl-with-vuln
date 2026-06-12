@@ -1,8 +1,5 @@
 {
   "buildCommands": ["ls", "touch ROOT_FS_FILE", "hostname", "ps"],
-  "copy": [
-    "/tmp/container_test/TEST_FILE /tmp/TEST_FILE",
-    "container.json container.json"
-  ],
+  "copy": ["container/. container/."],
   "workingDirectory": "/home/ubuntu/"
 }
