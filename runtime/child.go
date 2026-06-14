@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -103,21 +104,94 @@ func setupChildRuntime(cfg *childRuntimeConfig) (func(), error) {
 	if err := configureStaticDNS(); err != nil {
 		return nil, err
 	}
-	if err := os.MkdirAll("/proc", 0555); err != nil {
+
+	procMounted := false
+	devMounted := false
+	cleanup := func() {
+		if devMounted {
+			_ = syscall.Unmount("/dev", 0)
+		}
+		if procMounted {
+			_ = syscall.Unmount("/proc", 0)
+		}
+	}
+
+	setupCompleted := false
+	defer func() {
+		if !setupCompleted {
+			cleanup()
+		}
+	}()
+
+	if err := os.MkdirAll("/proc", 0o555); err != nil {
 		return nil, fmt.Errorf("%w: %v", ProcMountError, err)
 	}
 	if err := syscall.Mount("proc", "/proc", "proc", 0, ""); err != nil {
 		return nil, fmt.Errorf("%w: %v", ProcMountError, err)
 	}
+	procMounted = true
+
+	if err := setupMountDev(); err != nil {
+		return nil, err
+	}
+	devMounted = true
 
 	if err := os.Chdir(cfg.workDir); err != nil {
-		_ = syscall.Unmount("/proc", 0)
 		return nil, fmt.Errorf("%w: %v", DirChangeError, err)
 	}
 
-	return func() {
-		_ = syscall.Unmount("/proc", 0)
-	}, nil
+	setupCompleted = true
+	return cleanup, nil
+}
+
+func setupMountDev() error {
+	if err := os.MkdirAll("/dev", 0o755); err != nil {
+		return fmt.Errorf("%w: %v", DevMountError, err)
+	}
+
+	if err := syscall.Mount("tmpfs", "/dev", "tmpfs", uintptr(syscall.MS_NOSUID|syscall.MS_STRICTATIME), "mode=755,size=16m"); err != nil {
+		return fmt.Errorf("%w: %v", DevMountError, err)
+	}
+
+	mounted := true
+	defer func() {
+		if mounted {
+			_ = syscall.Unmount("/dev", 0)
+		}
+	}()
+
+	type devNode struct {
+		path  string
+		mode  uint32
+		major uint32
+		minor uint32
+	}
+
+	devNodes := []devNode{
+		{path: "/dev/null", mode: 0o666, major: 1, minor: 3},
+		{path: "/dev/zero", mode: 0o666, major: 1, minor: 5},
+		{path: "/dev/full", mode: 0o666, major: 1, minor: 7},
+		{path: "/dev/random", mode: 0o666, major: 1, minor: 8},
+		{path: "/dev/urandom", mode: 0o666, major: 1, minor: 9},
+		{path: "/dev/tty", mode: 0o666, major: 5, minor: 0},
+	}
+
+	for _, node := range devNodes {
+		dev := int(linuxMakedev(node.major, node.minor))
+		mode := syscall.S_IFCHR | node.mode
+		if err := syscall.Mknod(node.path, mode, dev); err != nil && !errors.Is(err, syscall.EEXIST) {
+			return fmt.Errorf("%w: mknod %s failed: %v", DevMountError, node.path, err)
+		}
+	}
+
+	mounted = false
+	return nil
+}
+
+func linuxMakedev(major, minor uint32) uint64 {
+	return (uint64(major&0xfff) << 8) |
+		(uint64(minor & 0xff)) |
+		(uint64(minor&^uint32(0xff)) << 12)
 }
 
 func configureStaticDNS() error {

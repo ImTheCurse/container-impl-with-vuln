@@ -33,3 +33,5 @@ go.work.sum
 
 rootfs/
 container-impl-with-vuln
+.venv/*
+__pycache__/

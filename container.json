@@ -1,5 +1,17 @@
 {
-  "buildCommands": ["ls", "apt update", "touch ROOT_FS_FILE", "hostname", "ps"],
-  "copy": ["container/. container/."],
+  "buildCommands": [
+    "ls",
+    "apt update",
+    "apt install -y python3",
+    "apt install -y curl",
+    "curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin sh",
+    "cd vuln-server",
+    "uv sync",
+    "uv run fastapi dev main.py",
+    "touch ROOT_FS_FILE",
+    "hostname",
+    "ps"
+  ],
+  "copy": ["vuln-server/. vuln-server/."],
   "workingDirectory": "/home/ubuntu/"
 }
