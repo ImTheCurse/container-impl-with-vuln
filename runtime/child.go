@@ -4,9 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
+
+	"path/filepath"
+	goruntime "runtime"
 	"strconv"
 	"syscall"
+
+	"github.com/ImTheCurse/container-impl-with-vuln/seccomp"
 )
 
 type childRuntimeConfig struct {
@@ -29,13 +33,55 @@ func RunContainerChild() error {
 		return err
 	}
 
+	profilePath, err := resolveSeccompProfilePath()
+	if err != nil {
+		return err
+	}
+	profile, err := seccomp.LoadNativeProfile(profilePath)
+	if err != nil {
+		return err
+	}
+
 	cleanup, err := setupChildRuntime(cfg)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
 
+	// Keep seccomp load + payload spawn on the same OS thread
+	// goroutines are scheduled by the go M:N scheduler,
+	// The runtime multiplexes thousands of
+	// lightweight goroutines onto a small number of heavy OS threads.
+	// since seccomp applies its filter on a single thread,
+	// when the go runtime decides to switch to a different thread
+	// the seccomp filter doesn't apply anymore.
+	goruntime.LockOSThread()
+	defer goruntime.UnlockOSThread()
+
+	if err := seccomp.ApplyProfile(profile); err != nil {
+		return err
+	}
 	return runPayloadScript(cfg.script)
+}
+
+func resolveSeccompProfilePath() (string, error) {
+	const relPath = "seccomp/default_seccomp.json"
+
+	if _, err := os.Stat(relPath); err == nil {
+		return relPath, nil
+	}
+
+	exePath, err := os.Executable()
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve executable path: %v", err)
+	}
+
+	candidate := filepath.Join(filepath.Dir(exePath), relPath)
+	if _, err := os.Stat(candidate); err == nil {
+		return candidate, nil
+	}
+
+	return "", fmt.Errorf("failed to find seccomp profile file: expected %q or %q", relPath, candidate)
 }
 
 func loadChildRuntimeConfig() (*childRuntimeConfig, error) {
@@ -212,12 +258,8 @@ func configureStaticDNS() error {
 }
 
 func runPayloadScript(script string) error {
-	payload := exec.Command("/bin/bash", "-c", script)
-	payload.Stdin = os.Stdin
-	payload.Stdout = os.Stdout
-	payload.Stderr = os.Stderr
-
-	if err := payload.Run(); err != nil {
+	argv := []string{"/bin/bash", "-c", script}
+	if err := syscall.Exec("/bin/bash", argv, os.Environ()); err != nil {
 		return fmt.Errorf("%w: %v", CmdRunFailedError, err)
 	}
 	return nil

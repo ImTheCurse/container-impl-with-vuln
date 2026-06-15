@@ -17,13 +17,31 @@ sudo mkdir -p rootfs
 sudo tar -xpf ubuntu-fs.tar -C rootfs
 ```
 
-## 🏗️ 2) Build the binary
+## 🏗️ 2) Install system deps + build (recommended)
+
+Use the bootstrap helper to install `pkg-config` + `libseccomp` dev headers and then build:
+
+```bash
+go run ./tools/bootstrap
+```
+
+Useful options:
+
+```bash
+# only install dependencies
+go run ./tools/bootstrap --install-only
+
+# skip install and only build
+go run ./tools/bootstrap --skip-install -o container-impl-with-vuln
+```
+
+## 🏗️ 3) Build the binary manually
 
 ```bash
 go build -o container-impl-with-vuln .
 ```
 
-## 🛠️ 3) Configure commands
+## 🛠️ 4) Configure commands
 
 Edit `container.json` (already included) with the commands you want to run inside the container.
 
@@ -38,7 +56,7 @@ Example:
 
 ```
 
-## 🚀 4) Run
+## 🚀 5) Run
 
 ```bash
 sudo ./container-impl-with-vuln --blueprint container.json

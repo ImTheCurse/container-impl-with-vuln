@@ -1,0 +1,15 @@
+=========================================================================
+Third-Party Software Attribution
+=========================================================================
+
+This project includes configuration files originating from the Moby Project
+(https://github.com/moby/profile), which are licensed under the Apache
+License, Version 2.0.
+
+Specifically, the default seccomp profile used by this runtime
+(default.json) is obtained from the Moby repository.
+
+Copyright 2013-present Docker, Inc. and the Moby Project Authors.
+
+You may obtain a copy of the Apache License at:
+http://www.apache.org/licenses/LICENSE-2.0
