@@ -7,7 +7,7 @@ This project includes configuration files originating from the Moby Project
 License, Version 2.0.
 
 Specifically, the default seccomp profile used by this runtime
-(default.json) is obtained from the Moby repository.
+(in seccomp/default_seccomp.json) is obtained from the Moby repository.
 
 Copyright 2013-present Docker, Inc. and the Moby Project Authors.
 
