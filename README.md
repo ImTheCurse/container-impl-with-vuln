@@ -5,7 +5,7 @@ Minimal container runner in Go using linux system containerization and isolation
 ## ✅ Prerequisites
 
 - 🐧 Linux
-- 🧰 Go 1.22+
+- 🧰 Go 1.24+
 - 🔐 `sudo` access (required for `chroot` / hostname changes)
 
 ## 📦 1) Prepare the root filesystem

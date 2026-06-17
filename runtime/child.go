@@ -151,6 +151,13 @@ func setupChildRuntime(cfg *childRuntimeConfig) (func(), error) {
 		return nil, err
 	}
 
+	if err := syscall.Mount("", "/", "", uintptr(syscall.MS_REC|syscall.MS_PRIVATE), ""); err != nil {
+		// Best-effort: some environments reject propagation changes here with EINVAL/EPERM.
+		if !errors.Is(err, syscall.EINVAL) && !errors.Is(err, syscall.EPERM) {
+			return nil, fmt.Errorf("%w: %v", ProcMountError, err)
+		}
+	}
+
 	procMounted := false
 	devMounted := false
 	cleanup := func() {

@@ -51,7 +51,7 @@ func (flags *ContainerFlags) OpenBluePrint() (*ContainerBlueprint, error) {
 	return &blueprint, nil
 }
 
-func (bp *ContainerBlueprint) CopyFiles() error {
+func (bp *ContainerBlueprint) CopyFiles(rootfsPath string) error {
 	for _, pathPair := range *bp.FilesToCopyFromHost {
 		mapping, err := parseSrcTargetFile(pathPair)
 		if err != nil {
@@ -68,7 +68,7 @@ func (bp *ContainerBlueprint) CopyFiles() error {
 			targetInImage = string(os.PathSeparator) + targetInImage
 		}
 
-		targetPath := filepath.Join("rootfs", strings.TrimPrefix(targetInImage, string(os.PathSeparator)))
+		targetPath := filepath.Join(rootfsPath, strings.TrimPrefix(targetInImage, string(os.PathSeparator)))
 		srcInfo, err := os.Stat(mapping.src)
 		if err != nil {
 			return err

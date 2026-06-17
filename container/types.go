@@ -1,6 +1,8 @@
 package container
 
-import "os/exec"
+import (
+	"os/exec"
+)
 
 type ContainerConfigCommand uint
 
@@ -28,8 +30,8 @@ type ContainerBlueprint struct {
 type Container struct {
 	// Command to run inside the container.
 	cmd *exec.Cmd
-	// Error of the command, remove it?
-	err error
+	// Rootfs path to extract the filesystem to
+	RootfsPath string
 }
 
 type ContainerResourcesLimit struct {

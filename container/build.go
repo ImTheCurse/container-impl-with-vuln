@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 
 	"github.com/ImTheCurse/container-impl-with-vuln/runtime"
@@ -16,15 +15,15 @@ func (cont *Container) BuildContainer(bp *ContainerBlueprint, limits *ContainerR
 		return InvalidBlueprintError
 	}
 
-	err := bp.CopyFiles()
+	err := bp.CopyFiles(cont.RootfsPath)
 	if err != nil {
 		return err
 	}
 
-	rootfsPath, err := filepath.Abs("rootfs")
-	if err != nil {
-		return fmt.Errorf("%w: %v", RootChangeFailedError, err)
-	}
+	// rootfsPath, err := filepath.Abs("rootfs")
+	// if err != nil {
+	// 	return fmt.Errorf("%w: %v", RootChangeFailedError, err)
+	// }
 
 	startRead, startWrite, err := os.Pipe()
 	if err != nil {
@@ -36,7 +35,7 @@ func (cont *Container) BuildContainer(bp *ContainerBlueprint, limits *ContainerR
 		Script:     runtime.BuildContainerScript(*bp.BuildCommands),
 		WorkDir:    *bp.WrkDir,
 		Hostname:   runtime.DefaultContainerHostname,
-		RootfsPath: rootfsPath,
+		RootfsPath: cont.RootfsPath,
 		StartRead:  startRead,
 	})
 	if err := cmd.Start(); err != nil {
