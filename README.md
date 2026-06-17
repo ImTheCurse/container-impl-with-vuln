@@ -8,16 +8,7 @@ Minimal container runner in Go using linux system containerization and isolation
 - 🧰 Go 1.24+
 - 🔐 `sudo` access (required for `chroot` / hostname changes)
 
-## 📦 1) Prepare the root filesystem
-
-Create the `rootfs` directory if it does not exist, then extract the Ubuntu filesystem tarball:
-
-```bash
-sudo mkdir -p rootfs
-sudo tar -xpf ubuntu-fs.tar -C rootfs
-```
-
-## 🏗️ 2) Install system deps + build (recommended)
+## 📦 1) Install system deps + build (recommended)
 
 Use the bootstrap helper to install `pkg-config` + `libseccomp` dev headers and then build:
 
@@ -35,13 +26,13 @@ go run ./tools/bootstrap --install-only
 go run ./tools/bootstrap --skip-install -o container-impl-with-vuln
 ```
 
-## 🏗️ 3) Build the binary manually
+## 📦 2) Build the binary manually
 
 ```bash
 go build -o container-impl-with-vuln .
 ```
 
-## 🛠️ 4) Configure commands
+## 🛠️ 3) Configure commands
 
 Edit `container.json` (already included) with the commands you want to run inside the container.
 
@@ -56,7 +47,7 @@ Example:
 
 ```
 
-## 🚀 5) Run
+## 🚀 4) Run
 
 ```bash
 sudo ./container-impl-with-vuln --blueprint container.json
