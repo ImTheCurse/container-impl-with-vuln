@@ -1,17 +1,13 @@
 {
   "buildCommands": [
-    "ls",
-    "apt update",
-    "apt install -y python3",
-    "apt install -y curl",
-    "curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin sh",
-    "cd vuln-server",
-    "uv sync",
-    "uv run fastapi dev main.py",
-    "touch ROOT_FS_FILE",
+    "cd /home/ubuntu/vuln-server && uv sync",
+    "touch /ROOT_FS_FILE_FROM_CONTAINER",
     "hostname",
-    "ps"
+    "ps",
+    "cd /home/ubuntu/vuln-server && uv run uvicorn main:app --host 0.0.0.0 --port 8000"
   ],
-  "copy": ["vuln-server/. vuln-server/."],
+  "copy": [
+    "vuln-server/. /home/ubuntu/vuln-server/"
+  ],
   "workingDirectory": "/home/ubuntu/"
 }
