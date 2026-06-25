@@ -46,8 +46,4 @@ venv/
 __pycache__/
 *.pyc
 
-# Environment files
-.envubuntu-fs.tar
-*.tar
-ubuntu-fs.tar
-*.tar
+*.env
