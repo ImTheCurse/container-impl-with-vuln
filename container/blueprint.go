@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// Validate verifies required CLI container flags are present.
 func (flags *ContainerFlags) Validate() error {
 	if flags.BlueprintPath == nil {
 		return BlueprintMissingPathError
@@ -15,6 +16,7 @@ func (flags *ContainerFlags) Validate() error {
 	return nil
 }
 
+// validate verifies required blueprint fields are present.
 func (bp *ContainerBlueprint) validate() error {
 	if bp.BuildCommands == nil {
 		return MissingRunCommandsError
@@ -28,6 +30,7 @@ func (bp *ContainerBlueprint) validate() error {
 	return nil
 }
 
+// OpenBluePrint loads, parses, and validates a container blueprint JSON file.
 func (flags *ContainerFlags) OpenBluePrint() (*ContainerBlueprint, error) {
 	err := flags.Validate()
 	if err != nil {
@@ -51,6 +54,7 @@ func (flags *ContainerFlags) OpenBluePrint() (*ContainerBlueprint, error) {
 	return &blueprint, nil
 }
 
+// CopyFiles copies all blueprint-declared host files and directories into rootfs.
 func (bp *ContainerBlueprint) CopyFiles(rootfsPath string) error {
 	for _, pathPair := range *bp.FilesToCopyFromHost {
 		mapping, err := parseSrcTargetFile(pathPair)
@@ -88,6 +92,7 @@ func (bp *ContainerBlueprint) CopyFiles(rootfsPath string) error {
 	return nil
 }
 
+// copySingleFile copies one regular file from source to target path.
 func copySingleFile(srcPath, targetPath string) error {
 	targetDir := filepath.Dir(targetPath)
 	if err := os.MkdirAll(targetDir, 0o755); err != nil {
@@ -123,6 +128,7 @@ func copySingleFile(srcPath, targetPath string) error {
 	return nil
 }
 
+// copyDirectory recursively copies a source directory into a target directory.
 func copyDirectory(srcDir, targetDir string) error {
 	if info, err := os.Stat(targetDir); err == nil {
 		if !info.IsDir() {
@@ -167,6 +173,7 @@ func copyDirectory(srcDir, targetDir string) error {
 	})
 }
 
+// parseSrcTargetFile parses a "source target" mapping from blueprint copy syntax.
 func parseSrcTargetFile(filePair string) (ContainerFileMapping, error) {
 	pair := strings.Fields(filePair)
 	if len(pair) != 2 {

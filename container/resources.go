@@ -15,6 +15,7 @@ const (
 	cpuPeriodUS = 100000
 )
 
+// hasAnyLimit reports whether any resource constraint is explicitly configured.
 func (limit *ContainerResourcesLimit) hasAnyLimit() bool {
 	if limit == nil {
 		return false

@@ -13,6 +13,7 @@ import (
 	containerruntime "github.com/ImTheCurse/container-impl-with-vuln/runtime"
 )
 
+// main parses CLI flags, prepares the root filesystem, and builds the container.
 func main() {
 	blueprint := flag.String("blueprint", "", "Path of the blueprint instructions to build the container")
 	containerChild := flag.Bool("container-child", false, "internal container child mode")
@@ -63,6 +64,7 @@ func main() {
 	}
 }
 
+// cleanupExtractedRootfs unmounts container mount points and removes extracted rootfs files.
 func cleanupExtractedRootfs(rootfsPath string) error {
 	for _, mountpoint := range []string{"proc", "dev"} {
 		target := filepath.Join(rootfsPath, mountpoint)

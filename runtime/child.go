@@ -21,6 +21,7 @@ type childRuntimeConfig struct {
 	startPipeFD int
 }
 
+// RunContainerChild initializes the isolated child runtime and executes build commands.
 func RunContainerChild() error {
 	fmt.Printf("Running child process id: %v\n", os.Getpid())
 
@@ -64,6 +65,7 @@ func RunContainerChild() error {
 	return runPayloadScript(cfg.script)
 }
 
+// resolveSeccompProfilePath finds the seccomp profile relative to cwd or executable.
 func resolveSeccompProfilePath() (string, error) {
 	const relPath = "seccomp/default_seccomp.json"
 
@@ -84,6 +86,7 @@ func resolveSeccompProfilePath() (string, error) {
 	return "", fmt.Errorf("failed to find seccomp profile file: expected %q or %q", relPath, candidate)
 }
 
+// loadChildRuntimeConfig loads child runtime settings from environment variables.
 func loadChildRuntimeConfig() (*childRuntimeConfig, error) {
 	script := os.Getenv(ChildScriptEnv)
 	if script == "" {
@@ -123,6 +126,7 @@ func loadChildRuntimeConfig() (*childRuntimeConfig, error) {
 	}, nil
 }
 
+// waitForParentStartSignal blocks until the parent signals child startup.
 func waitForParentStartSignal(startPipeFD int) error {
 	startPipe := os.NewFile(uintptr(startPipeFD), "container-start-pipe")
 	if startPipe == nil {
@@ -136,6 +140,7 @@ func waitForParentStartSignal(startPipeFD int) error {
 	return nil
 }
 
+// setupChildRuntime configures hostname, rootfs, mounts, and working directory.
 func setupChildRuntime(cfg *childRuntimeConfig) (func(), error) {
 	if err := syscall.Sethostname([]byte(cfg.hostname)); err != nil {
 		return nil, fmt.Errorf("%w: %v", HostnameChangeError, err)
@@ -197,6 +202,7 @@ func setupChildRuntime(cfg *childRuntimeConfig) (func(), error) {
 	return cleanup, nil
 }
 
+// setupMountDev mounts /dev and creates required character device nodes.
 func setupMountDev() error {
 	if err := os.MkdirAll("/dev", 0o755); err != nil {
 		return fmt.Errorf("%w: %v", DevMountError, err)
@@ -241,12 +247,14 @@ func setupMountDev() error {
 	return nil
 }
 
+// linuxMakedev encodes major and minor numbers into a Linux device identifier.
 func linuxMakedev(major, minor uint32) uint64 {
 	return (uint64(major&0xfff) << 8) |
 		(uint64(minor & 0xff)) |
 		(uint64(minor&^uint32(0xff)) << 12)
 }
 
+// configureStaticDNS writes a static /etc/resolv.conf inside the container root.
 func configureStaticDNS() error {
 	if info, err := os.Lstat("/etc/resolv.conf"); err == nil {
 		// checks if /etc/resolv.conf is a symbolic link
@@ -264,6 +272,7 @@ func configureStaticDNS() error {
 	return nil
 }
 
+// runPayloadScript replaces the process with bash to execute the build script.
 func runPayloadScript(script string) error {
 	argv := []string{"/bin/bash", "-c", script}
 	if err := syscall.Exec("/bin/bash", argv, os.Environ()); err != nil {

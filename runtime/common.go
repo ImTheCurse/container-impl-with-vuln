@@ -13,6 +13,7 @@ const (
 	DefaultContainerHostname = "container"
 )
 
+// BuildContainerScript assembles command lines into an executable bash script.
 func BuildContainerScript(commands []string) string {
 	return "set -ex\n" + strings.Join(commands, "\n")
 }

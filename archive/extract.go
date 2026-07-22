@@ -19,6 +19,7 @@ type deferredHardLink struct {
 	linkToPath string
 }
 
+// ExtractFileSystem extracts the filesystem archive into a temporary rootfs directory.
 func ExtractFileSystem(archivePath string) (string, error) {
 	tmpRootfsPath, err := createTempRootfsPath()
 	if err != nil {
@@ -44,6 +45,7 @@ func ExtractFileSystem(archivePath string) (string, error) {
 	return tmpRootfsPath, nil
 }
 
+// createTempRootfsPath creates and returns a unique temporary rootfs path.
 func createTempRootfsPath() (string, error) {
 	uid := uuid.New()
 	uniqueID := uid.String()
@@ -64,6 +66,7 @@ func createTempRootfsPath() (string, error) {
 	return resolvedPath, nil
 }
 
+// openArchiveExtractor opens the archive and resolves an extractor and readable stream.
 func openArchiveExtractor(ctx context.Context, archivePath string) (extractor archives.Extractor, stream io.Reader, file *os.File, retErr error) {
 	file, err := os.Open(archivePath)
 	if err != nil {
@@ -89,6 +92,7 @@ func openArchiveExtractor(ctx context.Context, archivePath string) (extractor ar
 	return parsedExtractor, stream, file, nil
 }
 
+// extractArchiveEntries walks all archive entries and extracts them into the rootfs path.
 func extractArchiveEntries(ctx context.Context, extractor archives.Extractor, stream io.Reader, rootfsPath string) ([]deferredHardLink, error) {
 	var pendingHardLinks []deferredHardLink
 
@@ -102,6 +106,7 @@ func extractArchiveEntries(ctx context.Context, extractor archives.Extractor, st
 	return pendingHardLinks, nil
 }
 
+// extractArchiveEntry extracts a single archive entry, dispatching by entry type.
 func extractArchiveEntry(rootfsPath string, info archives.FileInfo, pendingHardLinks *[]deferredHardLink) error {
 	targetPath, err := resolveArchivePath(rootfsPath, info.NameInArchive)
 	if err != nil {
@@ -130,6 +135,7 @@ func extractArchiveEntry(rootfsPath string, info archives.FileInfo, pendingHardL
 	return extractRegularFileEntry(targetPath, info)
 }
 
+// extractDirectoryEntry creates a directory entry and applies its archive metadata.
 func extractDirectoryEntry(targetPath string, info archives.FileInfo) error {
 	if err := os.MkdirAll(targetPath, info.Mode()); err != nil {
 		return fmt.Errorf("%w: %v", TargetDirectoryCreationError, err)
@@ -137,6 +143,7 @@ func extractDirectoryEntry(targetPath string, info archives.FileInfo) error {
 	return applyArchiveMetadata(targetPath, info, true)
 }
 
+// extractHardLinkEntry creates a hard link or defers it until its target exists.
 func extractHardLinkEntry(rootfsPath, targetPath string, hdr *tar.Header, info archives.FileInfo, pendingHardLinks *[]deferredHardLink) error {
 	linkToPath, err := resolveArchivePath(rootfsPath, hdr.Linkname)
 	if err != nil {
@@ -155,6 +162,7 @@ func extractHardLinkEntry(rootfsPath, targetPath string, hdr *tar.Header, info a
 	return applyArchiveMetadata(targetPath, info, false)
 }
 
+// extractSymlinkEntry creates a symlink entry and applies archive metadata.
 func extractSymlinkEntry(targetPath string, info archives.FileInfo) error {
 	_ = os.RemoveAll(targetPath)
 	if err := os.Symlink(info.LinkTarget, targetPath); err != nil {
@@ -163,6 +171,7 @@ func extractSymlinkEntry(targetPath string, info archives.FileInfo) error {
 	return applyArchiveMetadata(targetPath, info, false)
 }
 
+// extractRegularFileEntry copies a regular file from the archive into the rootfs.
 func extractRegularFileEntry(targetPath string, info archives.FileInfo) error {
 	src, err := info.Open()
 	if err != nil {
@@ -183,6 +192,7 @@ func extractRegularFileEntry(targetPath string, info archives.FileInfo) error {
 	return applyArchiveMetadata(targetPath, info, true)
 }
 
+// restoreDeferredHardLinks retries deferred hard links until all are restored or blocked.
 func restoreDeferredHardLinks(pendingHardLinks []deferredHardLink) error {
 	for len(pendingHardLinks) > 0 {
 		var remaining []deferredHardLink
@@ -215,6 +225,7 @@ func restoreDeferredHardLinks(pendingHardLinks []deferredHardLink) error {
 	return nil
 }
 
+// resolveArchivePath resolves an archive path within rootfs and blocks path traversal.
 func resolveArchivePath(rootfsPath, archivePath string) (string, error) {
 	entryPath := path.Clean(archivePath)
 	entryPath = strings.TrimPrefix(entryPath, "/")
@@ -230,6 +241,7 @@ func resolveArchivePath(rootfsPath, archivePath string) (string, error) {
 	return targetPath, nil
 }
 
+// applyArchiveMetadata applies file mode and ownership metadata from the archive.
 func applyArchiveMetadata(targetPath string, info archives.FileInfo, applyMode bool) error {
 	if applyMode && info.Mode()&os.ModeSymlink == 0 {
 		specialBits := info.Mode() & (os.ModeSetuid | os.ModeSetgid | os.ModeSticky)

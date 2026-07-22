@@ -10,6 +10,7 @@ import (
 	"github.com/ImTheCurse/container-impl-with-vuln/runtime"
 )
 
+// BuildContainer prepares rootfs content, starts the child runtime, and waits for completion.
 func (cont *Container) BuildContainer(bp *ContainerBlueprint, limits *ContainerResourcesLimit) (retErr error) {
 	if bp == nil {
 		return InvalidBlueprintError
@@ -62,6 +63,7 @@ func (cont *Container) BuildContainer(bp *ContainerBlueprint, limits *ContainerR
 	return waitForCommandWithSignals(cmd)
 }
 
+// attachResourceLimits applies optional cgroup limits and returns cleanup for them.
 func attachResourceLimits(cmd *exec.Cmd, limits *ContainerResourcesLimit) (func() error, error) {
 	cleanupCgroup := func() error { return nil }
 	if limits == nil {
@@ -76,6 +78,7 @@ func attachResourceLimits(cmd *exec.Cmd, limits *ContainerResourcesLimit) (func(
 	return cleanup, nil
 }
 
+// releaseChildStartSignal notifies the child process that parent setup is complete.
 func releaseChildStartSignal(startWrite *os.File, cmd *exec.Cmd) error {
 	if _, err := startWrite.Write([]byte{1}); err != nil {
 		killAndWait(cmd)
@@ -85,6 +88,7 @@ func releaseChildStartSignal(startWrite *os.File, cmd *exec.Cmd) error {
 	return nil
 }
 
+// waitForCommandWithSignals waits for process exit and handles termination signals.
 func waitForCommandWithSignals(cmd *exec.Cmd) error {
 	waitCh := make(chan error, 1)
 	go func() {
@@ -111,6 +115,7 @@ func waitForCommandWithSignals(cmd *exec.Cmd) error {
 	}
 }
 
+// killAndWait forcefully terminates a process and reaps it.
 func killAndWait(cmd *exec.Cmd) {
 	if cmd == nil || cmd.Process == nil {
 		return

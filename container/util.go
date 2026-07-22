@@ -2,6 +2,7 @@ package container
 
 import "fmt"
 
+// String returns a readable representation of the container blueprint.
 func (bp *ContainerBlueprint) String() string {
 	if bp == nil {
 		return "ContainerBlueprint<nil>"
@@ -21,6 +22,7 @@ func (bp *ContainerBlueprint) String() string {
 	return fmt.Sprintf("ContainerBlueprint{RunCommands:%s,FilesToCopyFromHost:%s,WrkDir:%s}", runCommands, filesToCopyFromHost, wrkDir)
 }
 
+// String returns a readable representation of container flags.
 func (flags *ContainerFlags) String() string {
 	if flags == nil {
 		return "ContainerFlags<nil>"

@@ -15,6 +15,7 @@ type ChildCommandConfig struct {
 	StartRead  *os.File
 }
 
+// NewChildCommand builds the re-exec child process command with namespace isolation.
 func NewChildCommand(cfg ChildCommandConfig) *exec.Cmd {
 	hostname := cfg.Hostname
 	if hostname == "" {
